@@ -6,35 +6,32 @@ from tkinter import filedialog
 import numpy as np
 
 class GetPic:
-	def __init__(self, cap):
+	def __init__(self):
+		self.cap = cv2.VideoCapture(0)
 		self.pause = False
 		self.piccount = 0
 		self.max_pics = 0
 		self.outputpath = ""
-		self.cap = cap
 		self.frame = None
 		self.thread = None
 		self.stopEvent = None
 		self.flag = False
 		self.root = tk.Tk()
 		self.panel = None
-		def submit(self):
-			if max_pics.get("1.0","end-1c") == "":
-				print("[INFO] Not possible, please enter a number")
-			else:
-				self.max_pics = int(float(max_pics.get("1.0","end-1c")))
-		btn_submit = tk.Button(self.root, text="Submit",command = lambda : submit(self) )
+		btn_close = tk.Button(self.root, text="Close",command = self.close)
+		btn_close.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		btn_submit = tk.Button(self.root, text="Submit",command = self.submit )
 		btn_submit.pack(side="bottom", fill="x", expand="yes", padx=10,pady=10)
-		max_pics = tk.Text(self.root, height=1, width=5)
-		max_pics.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.max_text = tk.Text(self.root, height=1, width=5)
+		self.max_text.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
 		btn_start = tk.Button(self.root, text="Start snapshots",command = self.takeSnapshot )
 		btn_start.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
-		btn_stop = tk.Button(self.root, text="Stop snapshots",command = self.onClose)
-		btn_stop.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
 		btn_save = tk.Button(self.root, text="Save directory",command = self.save_path )
 		btn_save.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
 		btn_pause = tk.Button(self.root, text="Pause/Resume taking pictures",command = self.pause_resume )
 		btn_pause.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.signal = tk.Label(self.root, text = "Enter number of pictures and choose save directory")
+		self.signal.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
 		self.stopEvent = threading.Event()
 		self.thread = threading.Thread(target=self.videoLoop, args=())
 		self.thread.start()
@@ -59,41 +56,45 @@ class GetPic:
 					if self.flag:
 						if (self.piccount != self.max_pics ):
 							time.sleep(0.5)
-							filename = "{}.jpg".format(str(self.piccount))
+							filename = "{}.jpg".format(str(self.piccount + 1))
 							path = os.path.sep.join((self.outputpath, filename))
 							cv2.imwrite(path, self.frame)
 							self.piccount = self.piccount + 1
-							print("[INFO] saved {}".format(filename))
+							self.signal["text"] = "Saved {}".format(filename)
 						else:
 							self.flag = False
 		except RuntimeError as e:
 			print("[INFO] caught a RuntimeError")
+	def submit(self):
+		if self.max_text.get("1.0","end-1c") == "":
+			self.signal["text"] = "Please enter the number of pictures to be taken"
+		else:
+			if int(float(self.max_text.get("1.0","end-1c"))) <= 0:
+				self.signal["text"] = "Please enter a positive integer only"
+				return
+			self.max_pics = int(float(self.max_text.get("1.0","end-1c")))
 
 	def takeSnapshot(self):
 		if self.outputpath == "":
 			self.save_path()
-		if self.max_pics == 0:
-			print("[INFO] Please enter number")
-			return
 		self.flag = True
 
-	def onClose(self):
+	def close(self):
+		self.signal["text"] = "Finished taking pictures"
 		self.flag = False
-		print("[INFO] Finished taking pictures")
+		self.cap.release()
 		self.stopEvent.set()
-		cap.release()
 		cv2.destroyAllWindows()
 		self.root.quit()
 	def pause_resume(self):
 		if self.pause == False:
+			self.signal["text"] = "Paused"
 			self.pause = True
 		else:
+			self.signal["text"] = "Resumed"
 			self.pause = False
 	def save_path(self):
 	    self.outputpath = filedialog.askdirectory()
 
-print("[INFO] Starting the camera...")
-cap = cv2.VideoCapture(1)
-instance = GetPic(cap)
+instance = GetPic()
 instance.root.mainloop()
-

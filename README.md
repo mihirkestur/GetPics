@@ -6,3 +6,5 @@ Features:
 1) Choose save directory
 2) Specify number of pictures to be taken
 3) Pause and resume taking pictures
+4) Choose the size of the pictures
+5) Choose the interval in which the pictures are to be taken

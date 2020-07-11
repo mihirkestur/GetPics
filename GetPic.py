@@ -1,16 +1,17 @@
 from PIL import Image
 from PIL import ImageTk
 import tkinter as tk
-import threading,datetime,cv2,os,time,glob
+import threading,datetime,cv2,os,time,imutils
 from tkinter import filedialog
 import numpy as np
 
 class GetPic:
 	def __init__(self):
-		self.cap = cv2.VideoCapture(0)
+		self.cap = cv2.VideoCapture(1)
 		self.root = tk.Tk()
+		self.root.geometry("1080x600")
 		self.rate = 1
-		self.size = (300,300)
+		self.size = (300,225)
 		self.pause = False
 		self.piccount = 0
 		self.max_pics = 0
@@ -21,29 +22,29 @@ class GetPic:
 		self.flag = False
 		self.panel = None
 		btn_close = tk.Button(self.root, text="Close",command = self.close)
-		btn_close.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		btn_close.place(x=850,y=600)
 		btn_submit = tk.Button(self.root, text="Submit",command = self.submit )
-		btn_submit.pack(side="bottom", fill="x", expand="yes", padx=10,pady=10)
+		btn_submit.place(x=850,y=550)
 		self.size_text = tk.Text(self.root, height=1, width=5)
-		self.size_text.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
-		self.lbl_size = tk.Label(self.root, text = "Enter the size of the pictures in the form of 'a,b' (in px, default is 300 x 300 px)")
-		self.lbl_size.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.size_text.place(x=850,y=500)
+		self.lbl_size = tk.Label(self.root, text = "Enter the width of the pictures (in px, default is 300 x 225 px)")
+		self.lbl_size.place(x=700,y=450)
 		self.rate_text = tk.Text(self.root, height=1, width=5)
-		self.rate_text.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.rate_text.place(x=850,y=400)
 		self.lbl_rate = tk.Label(self.root, text = "Enter rate at which the pictures should be taken (in seconds, default is 1 picture per second)")
-		self.lbl_rate.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.lbl_rate.place(x=700,y=350)
 		self.max_text = tk.Text(self.root, height=1, width=5)
-		self.max_text.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.max_text.place(x=850,y=300)
 		self.lbl_max_pic = tk.Label(self.root, text = "Enter maximum number of pictures to be taken")
-		self.lbl_max_pic.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		self.lbl_max_pic.place(x=850,y=250)
 		btn_start = tk.Button(self.root, text="Start snapshots",command = self.takeSnapshot )
-		btn_start.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		btn_start.place(x=850,y=200)
 		btn_save = tk.Button(self.root, text="Save directory",command = self.save_path )
-		btn_save.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		btn_save.place(x=850,y=150)
 		btn_pause = tk.Button(self.root, text="Pause/Resume taking pictures",command = self.pause_resume )
-		btn_pause.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
-		self.signal = tk.Label(self.root, text = "Pictures will be taken once start snapshots is pressed")
-		self.signal.pack(side="bottom", fill="both", expand="yes", padx=10,pady=10)
+		btn_pause.place(x=850,y=100)
+		self.signal = tk.Label(self.root, text = "Indicator: Pictures will be taken once start snapshots is pressed")
+		self.signal.place(x=450,y=50)
 		self.stopEvent = threading.Event()
 		self.thread = threading.Thread(target=self.videoLoop, args=())
 		self.thread.start()
@@ -52,25 +53,23 @@ class GetPic:
 	def videoLoop(self):
 		try:
 			while not self.stopEvent.is_set():
-				if self.pause == True: continue
 				_, self.frame = self.cap.read()
-				self.frame = cv2.resize(self.frame, self.size, interpolation=cv2.INTER_LINEAR)
+				self.frame = imutils.resize(self.frame,self.size[0])
 				img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
 				image = Image.fromarray(img)
 				image = ImageTk.PhotoImage(image)
 				if self.panel is None:
 					self.panel = tk.Label(image=image)
 					self.panel.image = image
-					self.panel.pack(side="top", padx=10, pady=10)
+					self.panel.place(x=0,y=0)
 				else:
 					self.panel.configure(image=image)
 					self.panel.image = image
-					if self.flag:
+					if self.flag == True and self.pause == False:
 						if (self.piccount != self.max_pics ):
 							time.sleep(self.rate)
 							filename = "{}.jpg".format(str(self.piccount + 1))
-							path = os.path.sep.join((self.outputpath, filename))
-							cv2.imwrite(path, self.frame)
+							cv2.imwrite(os.path.sep.join((self.outputpath, filename)), img)
 							self.piccount = self.piccount + 1
 							self.signal["text"] = "Saved {}".format(filename)
 						else:
